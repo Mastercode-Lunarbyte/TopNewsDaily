@@ -1,7 +1,12 @@
 import os
 from dotenv import load_dotenv
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    CallbackQueryHandler,
+    ContextTypes,
+)
 from news_collector import fetch_rss_news, fetch_digiato_news
 from summarizer import summarize_text
 from classifier import classify_topic
@@ -9,10 +14,10 @@ from config import TELEGRAM_TOKEN
 
 load_dotenv()
 
-async def start(update, context):
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("سلام! برای مشاهده اخبار روزانه، دستور /news را وارد کنید.")
 
-async def send_news(update, context):
+async def send_news(update: Update, context: ContextTypes.DEFAULT_TYPE):
     news_items = []
 
     news_items += fetch_rss_news("https://www.isna.ir/rss")
@@ -30,33 +35,29 @@ async def send_news(update, context):
 
         await update.message.reply_text(f"{title}\nموضوع: {topic}\n{link}", reply_markup=reply_markup)
 
-async def button_handler(update, context):
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(text=query.data)
 
-async def main():
-    application = Application.builder().token(TELEGRAM_TOKEN).build()
-
-    # ثبت هندلرها
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("news", send_news))
-    application.add_handler(CallbackQueryHandler(button_handler))
-
-    # راه‌اندازی Webhook
+def main():
     PORT = int(os.environ.get('PORT', 8443))
     APP_NAME = os.environ.get('APP_NAME')
     WEBHOOK_URL = f"https://{APP_NAME}.railway.app/{TELEGRAM_TOKEN}"
 
-    await application.bot.set_webhook(WEBHOOK_URL)
+    application = Application.builder().token(TELEGRAM_TOKEN).build()
 
-    await application.run_webhook(
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("news", send_news))
+    application.add_handler(CallbackQueryHandler(button_handler))
+
+    # بدون await — چون خودش blocking است
+    application.run_webhook(
         listen="0.0.0.0",
         port=PORT,
         url_path=TELEGRAM_TOKEN,
-        webhook_url=WEBHOOK_URL
+        webhook_url=WEBHOOK_URL,
     )
 
 if __name__ == '__main__':
-    import asyncio
-    asyncio.run(main())
+    main()
