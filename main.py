@@ -10,7 +10,7 @@ from telegram.ext import (
 from news_collector import fetch_rss_news, fetch_digiato_news
 from summarizer import summarize_text
 from classifier import classify_topic
-from config import TELEGRAM_TOKEN
+from config import TELEGRAM_TOKEN  # حالا این همون "TELEGRAM_TOKEN_NEWSBOT" رو از .env می‌خونه
 
 load_dotenv()
 
@@ -51,7 +51,6 @@ def main():
     application.add_handler(CommandHandler("news", send_news))
     application.add_handler(CallbackQueryHandler(button_handler))
 
-    # بدون await — چون خودش blocking است
     application.run_webhook(
         listen="0.0.0.0",
         port=PORT,
