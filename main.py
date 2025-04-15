@@ -15,30 +15,37 @@ from config import TELEGRAM_TOKEN  # حالا این همون "TELEGRAM_TOKEN_NE
 load_dotenv()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("سلام! برای مشاهده اخبار روزانه، دستور /news را وارد کنید.")
+    await update.message.reply_text("سلام! برای دریافت اخبار جدید دستور /news رو بزن 😊")
 
 async def send_news(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    news_items = []
+    await update.message.reply_text("در حال دریافت اخبار... لطفاً صبر کنید 📰")
 
-    news_items += fetch_rss_news("https://www.isna.ir/rss")
-    news_items += fetch_rss_news("https://www.rokna.ir/rss")
-    news_items += fetch_digiato_news()
+    try:
+        news_items = fetch_digiato_news() + fetch_tabnak_news()
 
-    for news in news_items:
-        title = news['title']
-        link = news['link']
-        topic = classify_topic(title)
-        summary = summarize_text(news['summary'] if news['summary'] else "")
+        for news in news_items:
+            title = news['title']
+            link = news['link']
+            topic = classify_topic(title)
+            summary = summarize_text(title)  # برای سادگی خلاصه‌ی عنوان
 
-        keyboard = [[InlineKeyboardButton("نمایش خلاصه", callback_data=summary)]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
+            keyboard = [[InlineKeyboardButton("📌 نمایش خلاصه", callback_data=summary[:1000])]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
 
-        await update.message.reply_text(f"{title}\nموضوع: {topic}\n{link}", reply_markup=reply_markup)
+            await update.message.reply_text(f"🗞️ {title}\n🔗 {link}\n📚 موضوع: {topic}", reply_markup=reply_markup)
 
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    except Exception as e:
+        logging.error("خطا در دریافت اخبار:", exc_info=True)
+        await update.message.reply_text("متأسفم، مشکلی در دریافت اخبار به‌وجود آمده 😞")
+
+async def handle_summary_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    await query.edit_message_text(text=query.data)
+    await query.edit_message_text(f"✂️ خلاصه:\n\n{query.data}")
+
+    
+
+   
 
 def main():
     PORT = int(os.environ.get('PORT', 8443))
