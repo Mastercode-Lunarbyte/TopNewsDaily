@@ -7,7 +7,8 @@ from telegram.ext import (
     CallbackQueryHandler,
     ContextTypes,
 )
-from news_collector import fetch_rss_news, fetch_digiato_news
+from news_collector import fetch_digiato_news, fetch_tabnak_news
+
 from summarizer import summarize_text
 from classifier import classify_topic
 from config import TELEGRAM_TOKEN  # حالا این همون "TELEGRAM_TOKEN_NEWSBOT" رو از .env می‌خونه
