@@ -8,31 +8,32 @@ from telegram.ext import (
     CallbackQueryHandler,
     ContextTypes,
 )
-from news_collector import fetch_rokna_news
+from news_collector import fetch_rokna_news, fetch_full_article
 from summarizer import summarize_text
-from config import TELEGRAM_TOKEN  # حالا این همون "TELEGRAM_TOKEN_NEWSBOT" رو از .env می‌خونه
+from config import TELEGRAM_TOKEN
 
 load_dotenv()
+
+news_cache = []
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("سلام! برای دریافت اخبار جدید دستور /news رو بزن 😊")
 
-# ارسال لیست اخبار برای انتخاب
 async def send_news(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("در حال دریافت اخبار... لطفاً صبر کنید 📰")
 
     try:
-        news_items = fetch_rokna_news()
+        global news_cache
+        news_cache = fetch_rokna_news()
 
-        if not news_items:
+        if not news_cache:
             await update.message.reply_text("متأسفانه، خبری یافت نشد.")
             return
 
         keyboard = []
-        # ایجاد دکمه برای هر عنوان خبری
-        for i, news in enumerate(news_items):
+        for i, news in enumerate(news_cache):
             title = news['title']
-            keyboard.append([InlineKeyboardButton(title[:30], callback_data=f"news_{i}")])  # نمایش 30 کاراکتر اول عنوان
+            keyboard.append([InlineKeyboardButton(title[:30], callback_data=f"news_{i}")])
 
         reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -42,23 +43,23 @@ async def send_news(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logging.error("خطا در دریافت اخبار:", exc_info=True)
         await update.message.reply_text("متأسفم، مشکلی در دریافت اخبار به‌وجود آمده 😞")
 
-# نمایش خلاصه وقتی کاربر دکمه را انتخاب کرد
 async def handle_summary_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    # دریافت شماره خبر از callback_data
     news_index = int(query.data.split("_")[1])
-
-    # دوباره دریافت اخبار
-    news_items = fetch_rokna_news()
-    news = news_items[news_index]
+    news = news_cache[news_index]
     title = news['title']
     link = news['link']
-    summary = summarize_text(title)  # برای سادگی خلاصه‌ی عنوان
+    full_text = fetch_full_article(link)
+    summary = summarize_text(full_text)
 
-    # ارسال خلاصه‌ی خبر
-    await query.edit_message_text(f"🗞️ {title}\n🔗 {link}\n\n✂️ خلاصه:\n\n{summary}")
+    await query.edit_message_text(
+        f"🗞️ {title}\n"
+        f"🔗 [مشاهده خبر]({link})\n\n"
+        f"✂️ خلاصه:\n\n{summary}",
+        parse_mode='Markdown'
+    )
 
 def main():
     PORT = int(os.environ.get('PORT', 8443))
@@ -69,7 +70,7 @@ def main():
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("news", send_news))
-    application.add_handler(CallbackQueryHandler(handle_summary_button))  # تغییر نام به `handle_summary_button`
+    application.add_handler(CallbackQueryHandler(handle_summary_button))
 
     application.run_webhook(
         listen="0.0.0.0",
