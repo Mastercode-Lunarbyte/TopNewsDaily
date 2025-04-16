@@ -8,7 +8,7 @@ from telegram.ext import (
     CallbackQueryHandler,
     ContextTypes,
 )
-from news_collector import fetch_digiato_news, fetch_tabnak_news
+from news_collector import  fetch_rokna_news
 from summarizer import summarize_text
 from classifier import classify_topic
 from config import TELEGRAM_TOKEN  # حالا این همون "TELEGRAM_TOKEN_NEWSBOT" رو از .env می‌خونه
@@ -23,7 +23,7 @@ async def send_news(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("در حال دریافت اخبار... لطفاً صبر کنید 📰")
 
     try:
-        news_items = fetch_digiato_news() + fetch_tabnak_news()
+        news_items = fetch_rokna_news()
 
         keyboard = []
         # ایجاد دکمه برای هر عنوان خبری
@@ -49,7 +49,7 @@ async def handle_summary_button(update: Update, context: ContextTypes.DEFAULT_TY
     news_index = int(query.data.split("_")[1])
 
     # دوباره دریافت اخبار
-    news_items = fetch_digiato_news() + fetch_tabnak_news()
+    news_items = fetch_rokna_news()
     news = news_items[news_index]
     title = news['title']
     link = news['link']
