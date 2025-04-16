@@ -8,9 +8,8 @@ from telegram.ext import (
     CallbackQueryHandler,
     ContextTypes,
 )
-from news_collector import  fetch_rokna_news
+from news_collector import fetch_rokna_news
 from summarizer import summarize_text
-from classifier import classify_topic
 from config import TELEGRAM_TOKEN  # حالا این همون "TELEGRAM_TOKEN_NEWSBOT" رو از .env می‌خونه
 
 load_dotenv()
@@ -25,12 +24,15 @@ async def send_news(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         news_items = fetch_rokna_news()
 
+        if not news_items:
+            await update.message.reply_text("متأسفانه، خبری یافت نشد.")
+            return
+
         keyboard = []
         # ایجاد دکمه برای هر عنوان خبری
         for i, news in enumerate(news_items):
             title = news['title']
-            link = news['link']
-            keyboard.append([InlineKeyboardButton(title[:30], callback_data=f"news_{i}")])
+            keyboard.append([InlineKeyboardButton(title[:30], callback_data=f"news_{i}")])  # نمایش 30 کاراکتر اول عنوان
 
         reply_markup = InlineKeyboardMarkup(keyboard)
 
