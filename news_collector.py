@@ -18,12 +18,13 @@ def fetch_rokna_news(limit=10):
 
         for article in articles[:limit]:
             title_tag = article.find('h3', class_='title')
+            # استخراج دقیق‌تر توضیحات از تگ <p> با کلاس 'lead' و ویژگی itemprop="description"
             description_tag = article.find('p', class_='lead', itemprop='description')
             link_tag = article.find('a', href=True)
 
             if title_tag and description_tag and link_tag:
                 title = title_tag.get_text(strip=True)
-                description = description_tag.get_text(strip=True)
+                description = description_tag.get_text(strip=True) if description_tag else 'خلاصه‌ای موجود نیست.'
                 link = BASE_URL + link_tag['href']
                 news_items.append({'title': title, 'description': description, 'link': link})
 
