@@ -54,15 +54,21 @@ async def handle_summary_button(update: Update, context: ContextTypes.DEFAULT_TY
     news = news_cache[news_index]
     title = news['title']
     link = news['link']
-    full_text = fetch_full_article(link)  # دریافت متن کامل خبر
-    summary = summarize_text(full_text)  # خلاصه کردن متن
+    full_text = fetch_full_article(link) 
+    if not full_text or full_text.strip() == "":
+        await query.edit_message_text("متأسفم، متن کامل خبر قابل دریافت نیست 😞")
+        return
+    summary = summarize_text(full_text)
+    if not summary or summary.strip() == "":
+        summary = "خلاصه‌ای برای این خبر یافت نشد."
+        
 
     await query.edit_message_text(
-        f"🗞️ {title}\n"
-        f"🔗 [مشاهده خبر]({link})\n\n"
-        f"✂️ خلاصه:\n\n{summary}",
-        parse_mode='Markdown'
-    )
+    f"🗞️ {title}\n"
+    f"🔗 [مشاهده خبر]({link})\n\n"
+    f"✂️ خلاصه:\n\n{summary}",
+    parse_mode='Markdown'
+)
 
 # اجرای اصلی بات تلگرام
 def main():
