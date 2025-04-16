@@ -9,9 +9,9 @@
 # summarizer.py
 
 def summarize_text(text):
-    if len(text) <= 300:
+    if len(text) <= 1000:
         return text
     else:
-        return text[:300] + "..."
+        return text[:1000] + "..."
 
 
