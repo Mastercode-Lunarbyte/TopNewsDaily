@@ -60,7 +60,7 @@ async def handle_summary_button(update: Update, context: ContextTypes.DEFAULT_TY
     await query.edit_message_text(
         f"🗞️ {title}\n"
         f"🔗 [مشاهده خبر]({link})\n\n"
-        f"✂️ خلاصه:\n\n{summary}",
+        f"✂️ خلاصه:\n{item['summary']}\n",
         parse_mode='Markdown'
     )
 
