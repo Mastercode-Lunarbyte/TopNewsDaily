@@ -35,23 +35,42 @@ def fetch_rokna_news(limit=10):
         return []
 
 # تابع برای دریافت متن کامل مقاله
-def fetch_full_article(link):
+
+
+def fetch_full_article(url):
     try:
-        response = requests.get(link)
-        response.raise_for_status()
-
+        response = requests.get(url, timeout=10)
+        response.encoding = 'utf-8'  # در صورت نیاز می‌تونه تغییر کنه
         soup = BeautifulSoup(response.text, 'html.parser')
-        content_div = soup.find('div', class_='body')
 
-        if not content_div:
-            return "متن کامل خبر یافت نشد."
+        # امتحان چند ساختار مختلف برای متن خبر
+        possible_selectors = [
+            {'name': 'div', 'class_': 'body'},
+            {'name': 'div', 'class_': 'article-body'},
+            {'name': 'div', 'class_': 'news-body'},
+            {'name': 'div', 'class_': 'content'},
+            {'name': 'div', 'id': 'content'},
+        ]
 
-        paragraphs = content_div.find_all('p')
-        full_text = "\n".join(p.get_text(strip=True) for p in paragraphs)
-        return full_text
+        for selector in possible_selectors:
+            content_div = soup.find(selector['name'], class_=selector.get('class_'), id=selector.get('id'))
+            if content_div:
+                paragraphs = content_div.find_all(['p', 'div'])
+                article_text = '\n'.join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
+                if article_text.strip():
+                    return article_text
 
-    except requests.exceptions.RequestException as e:
-        return f"خطا در دریافت مقاله: {e}"
+        # اگر هیچ‌کدام از ساختارهای بالا جواب نداد، تلاش با تمام تگ‌های p
+        all_paragraphs = soup.find_all('p')
+        article_text = '\n'.join(p.get_text(strip=True) for p in all_paragraphs if p.get_text(strip=True))
+        if article_text.strip():
+            return article_text
+
+        return ""
+    except Exception as e:
+        print(f"خطا در دریافت متن کامل خبر: {e}")
+        return ""
+
 
 # تابع اصلی برای نمایش اخبار
 def news_collector():
