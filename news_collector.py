@@ -1,3 +1,4 @@
+# news_collector.py
 import requests
 from bs4 import BeautifulSoup
 
@@ -11,40 +12,29 @@ def fetch_rokna_news(limit=10):
     soup = BeautifulSoup(response.text, 'html.parser')
     news_items = []
 
-    articles = soup.find_all('div', class_='item')
+    articles = soup.select('div.col-sm-12.list-item')  # ساختار جدید احتمالی
 
     for article in articles[:limit]:
-        title_tag = article.find('p', class_='lead', itemprop='description')
-        link_tag = article.find('a', itemprop='url')
+        link_tag = article.find('a', href=True)
+        title_tag = article.find('p')
 
-        if title_tag and link_tag:
+        if link_tag and title_tag:
             title = title_tag.get_text(strip=True)
-            link = BASE_URL + link_tag.get('href')
-            news_items.append({'title': title, 'link': link})  # ← dict استفاده از
+            link = BASE_URL + link_tag['href']
+            news_items.append({'title': title, 'link': link})
 
     return news_items
 
-def fetch_full_article(url):
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'html.parser')
+def fetch_full_article(link):
+    response = requests.get(link)
+    response.raise_for_status()
 
-        # محتوای کامل خبر را از تگ مربوطه بگیر
-        content_div = soup.find('div', itemprop='articleBody')
-        if not content_div:
-            return "محتوایی یافت نشد."
+    soup = BeautifulSoup(response.text, 'html.parser')
+    content_div = soup.find('div', class_='body')  # ممکنه نیاز به تغییر داشته باشه
 
-        paragraphs = content_div.find_all('p')
-        full_text = "\n".join(p.get_text(strip=True) for p in paragraphs)
+    if not content_div:
+        return "متن کامل خبر یافت نشد."
 
-        return full_text
-
-    except Exception as e:
-        return "خطا در دریافت محتوای کامل خبر."
-
-if __name__ == "__main__":
-    for i, item in enumerate(fetch_rokna_news(), 1):
-        print(f"{i}. {item['title']}")
-        print(f"   لینک: {item['link']}")
-        print("-" * 60)
+    paragraphs = content_div.find_all('p')
+    full_text = "\n".join(p.get_text(strip=True) for p in paragraphs)
+    return full_text
