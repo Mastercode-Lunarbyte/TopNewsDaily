@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+import logging
 
 def fetch_rokna_news():
     # آدرس صفحه اقتصادی سایت رکنا
@@ -18,19 +19,28 @@ def fetch_rokna_news():
 
         # جمع‌آوری تیترهای خبری در یک لیست
         news_items = []
-        for i, paragraph in enumerate(news_paragraphs[:10]):
-            news_items.append(paragraph.get_text(strip=True))
+        for i, paragraph in enumerate(news_paragraphs[:10]):  # محدود کردن به 10 خبر اول
+            news_items.append({
+                'title': paragraph.get_text(strip=True),
+                'link': paragraph.find_parent('a')['href'] if paragraph.find_parent('a') else None
+            })
 
+        if not news_items:
+            logging.warning("هیچ خبری از سایت رکنا دریافت نشد.")
+        
         return news_items
 
     except requests.exceptions.RequestException as e:
-        # مدیریت خطاهای درخواست (مثل قطع ارتباط با اینترنت)
-        print(f"Error fetching news: {e}")
+        logging.error(f"خطا در دریافت اخبار: {e}")
         return []
 
 # دریافت اخبار از سایت رکنا
-rokna_news = fetch_rokna_news()
+if __name__ == "__main__":
+    rokna_news = fetch_rokna_news()
 
-# نمایش تیترهای اخبار
-for i, news in enumerate(rokna_news, start=1):
-    print(f"{i}. {news}")
+    # نمایش تیترهای اخبار
+    if not rokna_news:
+        print("مشکلی در دریافت اخبار پیش آمد.")
+    else:
+        for i, news in enumerate(rokna_news, start=1):
+            print(f"{i}. {news['title']} - {news['link']}")
