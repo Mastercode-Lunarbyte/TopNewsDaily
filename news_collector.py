@@ -1,29 +1,34 @@
+import requests
+from bs4 import BeautifulSoup
+
+BASE_URL = 'https://www.rokna.net'
+URL = f'{BASE_URL}/%D8%A8%D8%AE%D8%B4-%D8%A7%D9%82%D8%AA%D8%B5%D8%A7%DB%8C-65'
+
 def fetch_rokna_news():
-    url = f'{BASE_URL}/%D8%A8%D8%AE%D8%B4-%D8%A7%D9%82%D8%AA%D8%B5%D8%A7%DB%8C-65'
+    response = requests.get(URL)
+    response.raise_for_status()
 
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        titles = soup.find_all('p', class_='lead', itemprop='description')
-        links = soup.find_all('a', itemprop='url')
+    news_items = []
 
-        news_items = []
-        for title, link in zip(titles, links):
-            href = link.get('href')
-            full_url = BASE_URL + href if href else None
-            news_items.append({
-                'title': title.get_text(strip=True),
-                'link': full_url
-            })
+    # هر خبر داخل div.item است
+    articles = soup.find_all('div', class_='item')
 
-        if not news_items:
-            logging.warning("هیچ خبری از سایت رکنا دریافت نشد.")
-        
-        return news_items[:10]  # حداکثر 10 خبر
+    for article in articles[:10]:  # فقط 10 تای اول
+        title_tag = article.find('p', class_='lead', itemprop='description')
+        link_tag = article.find('a', itemprop='url')
 
-    except requests.exceptions.RequestException as e:
-        logging.error(f"خطا در دریافت اخبار: {e}")
-        return []
+        if title_tag and link_tag:
+            title = title_tag.get_text(strip=True)
+            link = BASE_URL + link_tag.get('href')
+
+            news_items.append((title, link))
+
+    return news_items
+
+# چاپ تستی
+for i, (title, link) in enumerate(fetch_rokna_news(), 1):
+    print(f"{i}. {title}")
+    print(f"   لینک: {link}")
+    print("-" * 60)
