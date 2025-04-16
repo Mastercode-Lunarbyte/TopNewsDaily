@@ -6,6 +6,8 @@ beautifulsoup4
 webdriver-manager
 python-dotenv
 python-telegram-bot[webhooks]
+requests
+bs4
 
 
 
