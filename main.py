@@ -14,17 +14,19 @@ from config import TELEGRAM_TOKEN
 
 load_dotenv()
 
-news_cache = []
+news_cache = []  # کش برای ذخیره اخبار
 
+# شروع دستور
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("سلام! برای دریافت اخبار جدید دستور /news رو بزن 😊")
 
+# دریافت اخبار و ارسال به کاربر
 async def send_news(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("در حال دریافت اخبار... لطفاً صبر کنید 📰")
 
     try:
         global news_cache
-        news_cache = fetch_rokna_news()
+        news_cache = fetch_rokna_news()  # دریافت اخبار جدید
 
         if not news_cache:
             await update.message.reply_text("متأسفانه، خبری یافت نشد.")
@@ -43,6 +45,7 @@ async def send_news(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logging.error("خطا در دریافت اخبار:", exc_info=True)
         await update.message.reply_text("متأسفم، مشکلی در دریافت اخبار به‌وجود آمده 😞")
 
+# ارسال خلاصه خبر پس از انتخاب توسط کاربر
 async def handle_summary_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -51,8 +54,8 @@ async def handle_summary_button(update: Update, context: ContextTypes.DEFAULT_TY
     news = news_cache[news_index]
     title = news['title']
     link = news['link']
-    full_text = fetch_full_article(link)
-    summary = summarize_text(full_text)
+    full_text = fetch_full_article(link)  # دریافت متن کامل خبر
+    summary = summarize_text(full_text)  # خلاصه کردن متن
 
     await query.edit_message_text(
         f"🗞️ {title}\n"
@@ -61,6 +64,7 @@ async def handle_summary_button(update: Update, context: ContextTypes.DEFAULT_TY
         parse_mode='Markdown'
     )
 
+# اجرای اصلی بات تلگرام
 def main():
     PORT = int(os.environ.get('PORT', 8443))
     APP_NAME = os.environ.get('APP_NAME')
