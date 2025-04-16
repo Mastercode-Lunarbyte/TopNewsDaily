@@ -35,7 +35,7 @@ async def send_news(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = []
         for i, news in enumerate(news_cache):
             title = news['title']
-            keyboard.append([InlineKeyboardButton(title[:30], callback_data=f"news_{i}")])
+            keyboard.append([InlineKeyboardButton(title[:60], callback_data=f"news_{i}")])
 
         reply_markup = InlineKeyboardMarkup(keyboard)
 
