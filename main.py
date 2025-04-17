@@ -14,8 +14,6 @@ from config import TELEGRAM_TOKEN
 
 load_dotenv()
 
-
-
 news_cache = []
 current_category = None
 
@@ -23,6 +21,13 @@ CATEGORY_URLS = {
     "اقتصادی": "بخش-اقتصادی-65",
     "فرهنگی": "بخش-فرهنگی-9"
 }
+
+# ✅ دستور /start
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "سلام! به ربات اخبار خوش اومدی 🎉\n"
+        "برای دریافت اخبار جدید، دستور /news رو وارد کن."
+    )
 
 # دستور /news: انتخاب دسته‌بندی
 async def send_news(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -80,7 +85,7 @@ async def handle_summary_button(update: Update, context: ContextTypes.DEFAULT_TY
         parse_mode='Markdown'
     )
 
-# main() بدون تغییر زیاد
+# تابع main
 def main():
     application = Application.builder().token(TELEGRAM_TOKEN).build()
 
