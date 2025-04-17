@@ -18,9 +18,10 @@ news_cache = []
 current_category = None
 
 CATEGORY_URLS = {
-    "اقتصادی": "بخش-اقتصادی-65",
+    "اقتصادی": "بخش-اخبار-اقتصادی-65",
     "فرهنگی": "بخش-فرهنگی-9"
 }
+
 
 # ✅ دستور /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
