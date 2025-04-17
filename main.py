@@ -8,7 +8,7 @@ from telegram.ext import (
     CallbackQueryHandler,
     ContextTypes,
 )
-from news_collector import NewsFetcher, ArticleFetcher
+from news_collector import NewsFetcher
 from summarizer import summarize_text
 from config import TELEGRAM_TOKEN
 
@@ -71,7 +71,8 @@ async def handle_summary_button(update: Update, context: ContextTypes.DEFAULT_TY
 
     news_index = int(query.data.split("_")[1])
     news = news_cache[news_index]
-    full_text = ArticleFetcher.fetch_full_article(news['link'])
+    full_text = NewsFetcher.fetch_full_article(news['link'])
+
 
     if not full_text:
         await query.edit_message_text("❌ متن کامل خبر قابل دریافت نیست.")
