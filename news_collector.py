@@ -1,8 +1,14 @@
 import requests
 from bs4 import BeautifulSoup
 
-BASE_URL = 'https://www.rokna.net'
-
+BASE_URL = 'https://www.imna.ir'
+CATEGORIES = {
+    'اقتصادی': 'اقتصادی',
+    'اجتماعی': 'اجتماعی',
+    'سیاسی': 'سیاسی',
+    'علمی': 'علمی-و-آموزشی',
+    'فرهنگی': 'فرهنگی',
+}
 
 class NewsFetcher:
     def __init__(self, category_url):
@@ -16,18 +22,28 @@ class NewsFetcher:
             soup = BeautifulSoup(response.text, 'html.parser')
             news_items = []
 
+            # حالت ۱: ساختار کلاسیک (مانند اقتصادی)
             articles = soup.select('li.ostani-parted')
+            if not articles:
+                # حالت ۲: ساختار جدید (مانند فرهنگی)
+                container = soup.find('div', class_='l-landing-list')
+                if container:
+                    articles = container.find_all('div', recursive=False)
 
             for article in articles[:limit]:
                 title_tag = article.find('h3', class_='title')
-                description_tag = article.find('p', class_='lead', itemprop='description')
-                link_tag = article.find('a', href=True)
+                link_tag = title_tag.find('a', href=True) if title_tag else None
+                description_tag = article.find('p', class_='lead')
 
-                if title_tag and description_tag and link_tag:
+                if title_tag and link_tag:
                     title = title_tag.get_text(strip=True)
-                    description = description_tag.get_text(strip=True)
                     link = BASE_URL + link_tag['href']
-                    news_items.append({'title': title, 'description': description, 'link': link})
+                    description = description_tag.get_text(strip=True) if description_tag else ""
+                    news_items.append({
+                        'title': title,
+                        'description': description,
+                        'link': link
+                    })
 
             return news_items
 
@@ -35,35 +51,14 @@ class NewsFetcher:
             print(f"❌ خطا در دریافت اطلاعات: {e}")
             return []
 
-
-class ArticleFetcher:
-    @staticmethod
-    def fetch_full_article(url):
-        try:
-            response = requests.get(url, timeout=10)
-            response.encoding = 'utf-8'
-            soup = BeautifulSoup(response.text, 'html.parser')
-
-            possible_selectors = [
-                {'name': 'div', 'class_': 'body'},
-                {'name': 'div', 'class_': 'article-body'},
-                {'name': 'div', 'class_': 'news-body'},
-                {'name': 'div', 'class_': 'content'},
-                {'name': 'div', 'id': 'content'},
-            ]
-
-            for selector in possible_selectors:
-                content_div = soup.find(selector['name'], class_=selector.get('class_'), id=selector.get('id'))
-                if content_div:
-                    paragraphs = content_div.find_all(['p', 'div'])
-                    article_text = '\n'.join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
-                    if article_text.strip():
-                        return article_text
-
-            all_paragraphs = soup.find_all('p')
-            article_text = '\n'.join(p.get_text(strip=True) for p in all_paragraphs if p.get_text(strip=True))
-            return article_text
-
-        except Exception as e:
-            print(f"❌ خطا در دریافت متن کامل خبر: {e}")
-            return ""
+if __name__ == "__main__":
+    for name, path in CATEGORIES.items():
+        print(f"\n🗂 دسته‌بندی: {name}")
+        fetcher = NewsFetcher(path)
+        news_list = fetcher.fetch_news(limit=5)
+        for news in news_list:
+            print(f"📰 {news['title']}")
+            print(f"🔗 {news['link']}")
+            if news['description']:
+                print(f"📄 {news['description']}")
+            print('---')
