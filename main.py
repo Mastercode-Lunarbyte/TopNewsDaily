@@ -1,5 +1,6 @@
 import os
 import logging
+import requests
 from dotenv import load_dotenv
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import (
@@ -9,8 +10,7 @@ from telegram.ext import (
     ContextTypes,
 )
 
-from news_collector import fetch_rokna_news, fetch_full_article  # تغییر این خط
-
+from news_collector import fetch_rokna_news, fetch_full_article
 from summarizer import summarize_text
 from config import TELEGRAM_TOKEN
 
@@ -19,13 +19,14 @@ load_dotenv()
 news_cache = []
 current_category = None
 
+CHANNEL_USERNAME = "@goldencache"  # 🔒 نام کانال
+
 CATEGORY_URLS = {
     "اقتصادی": "اقتصادی",
     "فرهنگی": "فرهنگی",
-    "سبک زندگی": "سبک زندگی"  # افزودن سبک زندگی به دیکشنری
+    "سبک زندگی": "سبک زندگی"
 }
 
-# ✅ کلاس جدید برای یکپارچه‌سازی با ساختار قبلی
 class NewsFetcher:
     def __init__(self, category):
         self.category = category
@@ -37,26 +38,43 @@ class NewsFetcher:
     def fetch_full_article(url):
         return fetch_full_article(url)
 
+# ✅ تابع بررسی عضویت در کانال
+def is_user_in_channel(user_id):
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/getChatMember"
+    params = {"chat_id": CHANNEL_USERNAME, "user_id": user_id}
+    response = requests.get(url, params=params).json()
+    return response.get("result", {}).get("status") in ["member", "administrator", "creator"]
+
 # ✅ دستور /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if not is_user_in_channel(user_id):
+        await update.message.reply_text("❗️برای استفاده از ربات، ابتدا عضو کانال شوید:\n" + CHANNEL_USERNAME)
+        return
+
     await update.message.reply_text(
         "سلام! به ربات اخبار خوش اومدی 🎉\n"
         "برای دریافت اخبار جدید، دستور /news رو وارد کن."
     )
 
-# دستور /news: انتخاب دسته‌بندی
+# ✅ دستور /news
 async def send_news(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if not is_user_in_channel(user_id):
+        await update.message.reply_text("❗️برای استفاده از ربات، ابتدا عضو کانال شوید:\n" + CHANNEL_USERNAME)
+        return
+
     keyboard = [
         [InlineKeyboardButton("🧮 اقتصادی", callback_data="category_اقتصادی")],
         [InlineKeyboardButton("🎭 فرهنگی", callback_data="category_فرهنگی")],
-        [InlineKeyboardButton("💡 سبک زندگی", callback_data="category_سبک زندگی")]  # اضافه کردن سبک زندگی به دکمه‌ها
+        [InlineKeyboardButton("💡 سبک زندگی", callback_data="category_سبک زندگی")]
     ]
     await update.message.reply_text(
         "دسته‌بندی مورد نظر خود را انتخاب کنید:",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-# مرحله بعدی: گرفتن لیست خبر بعد از انتخاب دسته‌بندی
+# ✅ انتخاب دسته‌بندی
 async def handle_category_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -80,7 +98,7 @@ async def handle_category_selection(update: Update, context: ContextTypes.DEFAUL
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-# نمایش خلاصه خبر
+# ✅ نمایش خلاصه خبر
 async def handle_summary_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -101,7 +119,7 @@ async def handle_summary_button(update: Update, context: ContextTypes.DEFAULT_TY
         parse_mode='Markdown'
     )
 
-# تابع main
+# ✅ تابع اصلی
 def main():
     application = Application.builder().token(TELEGRAM_TOKEN).build()
 
