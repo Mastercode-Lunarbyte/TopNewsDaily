@@ -10,42 +10,33 @@ CATEGORIES = {
     'فرهنگی': 'فرهنگی',
 }
 
+
+
 class NewsFetcher:
     def __init__(self, category_url):
-        self.category_url = f'{BASE_URL}/{category_url}'
+        self.url = f"https://www.rokna.net/{category_url}"
 
-    def fetch_news(self, limit=10):
-        try:
-            response = requests.get(self.category_url)
-            response.raise_for_status()
+    def fetch_news(self):
+        response = requests.get(self.url)
+        response.encoding = 'utf-8'
+        if response.status_code != 200:
+            return []
 
-            soup = BeautifulSoup(response.text, 'html.parser')
-            news_items = []
+        soup = BeautifulSoup(response.text, "html.parser")
+        articles = soup.select("div.news-content > a")
 
-            # حالت ۱: ساختار کلاسیک (مانند اقتصادی)
-            articles = soup.select('li.ostani-parted')
-            if not articles:
-                # حالت ۲: ساختار جدید (مانند فرهنگی)
-                container = soup.find('div', class_='l-landing-list')
-                if container:
-                    articles = container.find_all('div', recursive=False)
+        news_list = []
+        for article in articles:
+            title = article.get("title")
+            link = article.get("href")
+            if title and link:
+                news_list.append({
+                    "title": title.strip(),
+                    "link": "https://www.rokna.net" + link
+                })
 
-            for article in articles[:limit]:
-                title_tag = article.find('h3', class_='title')
-                link_tag = title_tag.find('a', href=True) if title_tag else None
-                description_tag = article.find('p', class_='lead')
+        return news_list
 
-                if title_tag and link_tag:
-                    title = title_tag.get_text(strip=True)
-                    link = BASE_URL + link_tag['href']
-                    description = description_tag.get_text(strip=True) if description_tag else ""
-                    news_items.append({
-                        'title': title,
-                        'description': description,
-                        'link': link
-                    })
-
-            return news_items
 
         except requests.exceptions.RequestException as e:
             print(f"❌ خطا در دریافت اطلاعات: {e}")
