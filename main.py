@@ -8,7 +8,9 @@ from telegram.ext import (
     CallbackQueryHandler,
     ContextTypes,
 )
-from news_collector import NewsFetcher
+
+from news_collector import fetch_rokna_news, fetch_full_article  # تغییر این خط
+
 from summarizer import summarize_text
 from config import TELEGRAM_TOKEN
 
@@ -18,10 +20,21 @@ news_cache = []
 current_category = None
 
 CATEGORY_URLS = {
-    "اقتصادی": "بخش-اخبار-اقتصادی-65",
-    "فرهنگی": "بخش-فرهنگی-9"
+    "اقتصادی": "اقتصادی",
+    "فرهنگی": "فرهنگی"
 }
 
+# ✅ کلاس جدید برای یکپارچه‌سازی با ساختار قبلی
+class NewsFetcher:
+    def __init__(self, category):
+        self.category = category
+
+    def fetch_news(self):
+        return fetch_rokna_news(self.category)
+
+    @staticmethod
+    def fetch_full_article(url):
+        return fetch_full_article(url)
 
 # ✅ دستور /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -48,7 +61,7 @@ async def handle_category_selection(update: Update, context: ContextTypes.DEFAUL
     category = query.data.split("_")[1]
     global current_category, news_cache
     current_category = category
-    fetcher = NewsFetcher(CATEGORY_URLS[category])
+    fetcher = NewsFetcher(category)
     news_cache = fetcher.fetch_news()
 
     if not news_cache:
@@ -73,7 +86,6 @@ async def handle_summary_button(update: Update, context: ContextTypes.DEFAULT_TY
     news_index = int(query.data.split("_")[1])
     news = news_cache[news_index]
     full_text = NewsFetcher.fetch_full_article(news['link'])
-
 
     if not full_text:
         await query.edit_message_text("❌ متن کامل خبر قابل دریافت نیست.")
