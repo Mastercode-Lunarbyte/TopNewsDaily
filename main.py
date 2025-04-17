@@ -21,7 +21,8 @@ current_category = None
 
 CATEGORY_URLS = {
     "اقتصادی": "اقتصادی",
-    "فرهنگی": "فرهنگی"
+    "فرهنگی": "فرهنگی",
+    "سبک زندگی": "سبک زندگی"  # افزودن سبک زندگی به دیکشنری
 }
 
 # ✅ کلاس جدید برای یکپارچه‌سازی با ساختار قبلی
@@ -47,7 +48,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def send_news(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("🧮 اقتصادی", callback_data="category_اقتصادی")],
-        [InlineKeyboardButton("🎭 فرهنگی", callback_data="category_فرهنگی")]
+        [InlineKeyboardButton("🎭 فرهنگی", callback_data="category_فرهنگی")],
+        [InlineKeyboardButton("💡 سبک زندگی", callback_data="category_سبک زندگی")]  # اضافه کردن سبک زندگی به دکمه‌ها
     ]
     await update.message.reply_text(
         "دسته‌بندی مورد نظر خود را انتخاب کنید:",
