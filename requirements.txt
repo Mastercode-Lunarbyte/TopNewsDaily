@@ -8,6 +8,9 @@ python-dotenv
 python-telegram-bot[webhooks]
 requests
 bs4
+transformers
+torch
+
 
 
 
