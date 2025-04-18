@@ -24,8 +24,10 @@ CHANNEL_USERNAME = "@goldencache"  # 🔒 نام کانال
 CATEGORY_URLS = {
     "اقتصادی": "اقتصادی",
     "فرهنگی": "فرهنگی",
-    "سبک زندگی": "سبک زندگی"
+    "سبک زندگی": "سبک زندگی",
+    "اجتماعی": "اجتماعی"  
 }
+
 
 class NewsFetcher:
     def __init__(self, category):
@@ -67,7 +69,8 @@ async def send_news(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("🧮 اقتصادی", callback_data="category_اقتصادی")],
         [InlineKeyboardButton("🎭 فرهنگی", callback_data="category_فرهنگی")],
-        [InlineKeyboardButton("💡 سبک زندگی", callback_data="category_سبک زندگی")]
+        [InlineKeyboardButton("💡 سبک زندگی", callback_data="category_سبک زندگی")],
+        [InlineKeyboardButton("👥 اجتماعی", callback_data="category_اجتماعی")] 
     ]
     await update.message.reply_text(
         "دسته‌بندی مورد نظر خود را انتخاب کنید:",
