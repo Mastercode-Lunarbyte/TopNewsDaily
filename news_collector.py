@@ -6,7 +6,8 @@ BASE_URL = 'https://www.rokna.net'
 CATEGORIES = {
     'اقتصادی': '/بخش-اقتصادی-65',
     'فرهنگی': '/بخش-فرهنگی-9',
-    'سبک زندگی': '/بخش-%D8%B3%D8%A8%DA%A9-%D8%B2%D9%86%D8%AF%DA%AF%DB%8C-261'
+    'سبک زندگی': '/بخش-%D8%B3%D8%A8%DA%A9-%D8%B2%D9%86%D8%AF%DA%AF%DB%8C-261',
+    'اجتماعی': '/بخش-اخبار-اجتماعی-95',
 }
 
 # تابع برای استخراج تیترهای خبری و لینک‌ها
@@ -25,49 +26,24 @@ def fetch_rokna_news(category='اقتصادی', limit=10):
         news_items = []
 
         if category == "اقتصادی":
-            # استخراج اخبار اقتصادی
             articles = soup.select('li.ostani-parted')
-
-            for article in articles[:limit]:
-                title_tag = article.find('h3', class_='title')
-                description_tag = article.find('p', class_='lead', itemprop='description')
-                link_tag = article.find('a', href=True)
-
-                if title_tag and description_tag and link_tag:
-                    title = title_tag.get_text(strip=True)
-                    description = description_tag.get_text(strip=True) if description_tag else 'خلاصه‌ای موجود نیست.'
-                    link = BASE_URL + link_tag['href']
-                    news_items.append({'title': title, 'description': description, 'link': link})
-
-        elif category == "فرهنگی":
-            # استخراج اخبار فرهنگی
+        elif category in ["فرهنگی", "سبک زندگی"]:
             articles = soup.select('div.l-landing-list')
+        elif category == "اجتماعی":
+            articles = soup.select('div.economic-outer, div.news-outer')
+        else:
+            articles = []
 
-            for article in articles[:limit]:
-                title_tag = article.find('h3', class_='title')
-                description_tag = article.find('p', class_='lead', itemprop='description')
-                link_tag = article.find('a', href=True)
+        for article in articles[:limit]:
+            title_tag = article.find('h3', class_='title')
+            description_tag = article.find('p', class_='lead', itemprop='description')
+            link_tag = article.find('a', href=True)
 
-                if title_tag and description_tag and link_tag:
-                    title = title_tag.get_text(strip=True)
-                    description = description_tag.get_text(strip=True) if description_tag else 'خلاصه‌ای موجود نیست.'
-                    link = BASE_URL + link_tag['href']
-                    news_items.append({'title': title, 'description': description, 'link': link})
-
-        elif category == "سبک زندگی":
-            # استخراج اخبار سبک زندگی
-            articles = soup.select('div.l-landing-list')
-
-            for article in articles[:limit]:
-                title_tag = article.find('h3', class_='title')
-                description_tag = article.find('p', class_='lead', itemprop='description')
-                link_tag = article.find('a', href=True)
-
-                if title_tag and description_tag and link_tag:
-                    title = title_tag.get_text(strip=True)
-                    description = description_tag.get_text(strip=True) if description_tag else 'خلاصه‌ای موجود نیست.'
-                    link = BASE_URL + link_tag['href']
-                    news_items.append({'title': title, 'description': description, 'link': link})
+            if title_tag and link_tag:
+                title = title_tag.get_text(strip=True)
+                description = description_tag.get_text(strip=True) if description_tag else 'خلاصه‌ای موجود نیست.'
+                link = BASE_URL + link_tag['href']
+                news_items.append({'title': title, 'description': description, 'link': link})
 
         return news_items
 
@@ -82,28 +58,18 @@ def fetch_full_article(url):
         response.encoding = 'utf-8'
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        # برای دسته‌بندی فرهنگی
-        if 'فرهنگی' in url:
+        # برای فرهنگی و سبک زندگی
+        if 'فرهنگی' in url or 'سبک-زندگی' in url:
             content_div = soup.find('div', id='echo_detail')
             if content_div:
-                paragraphs = content_div.find_all(['p'])
-                article_text = '\n'.join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
-                return article_text
+                paragraphs = content_div.find_all('p')
+                return '\n'.join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
 
-        # برای دسته‌بندی اقتصادی
+        # برای اقتصادی و اجتماعی
         content_div = soup.find('div', class_='body')
         if content_div:
-            paragraphs = content_div.find_all(['p'])
-            article_text = '\n'.join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
-            return article_text
-
-        # برای دسته‌بندی سبک زندگی
-        if 'سبک زندگی' in url:
-            content_div = soup.find('div', id='echo_detail')
-            if content_div:
-                paragraphs = content_div.find_all(['p'])
-                article_text = '\n'.join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
-                return article_text
+            paragraphs = content_div.find_all('p')
+            return '\n'.join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
 
         # تلاش با تمام تگ‌های p
         all_paragraphs = soup.find_all('p')
