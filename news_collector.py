@@ -25,12 +25,11 @@ def fetch_rokna_news(category='اقتصادی', limit=10):
         soup = BeautifulSoup(response.text, 'html.parser')
         news_items = []
 
-        if category == "اقتصادی":
+        # استفاده از سلکتور مناسب برای هر دسته
+        if category in ["اقتصادی", "اجتماعی"]:
             articles = soup.select('li.ostani-parted')
         elif category in ["فرهنگی", "سبک زندگی"]:
             articles = soup.select('div.l-landing-list')
-        elif category == "اجتماعی":
-            articles = soup.select('div.economic-outer, div.news-outer')
         else:
             articles = []
 
